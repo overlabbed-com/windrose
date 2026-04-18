@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { authMiddleware } from '@/lib/auth/middleware';
+import type { AuthContext } from '@/lib/auth/middleware';
 import ModelRegistry from '@/lib/models/registry';
 import { ModelWithProvider } from '@/lib/models/types';
 import SearchAgent from '@/lib/agents/search';
@@ -73,6 +75,8 @@ const ensureChatExists = async (input: {
   sources: SearchSources[];
   query: string;
   fileIds: string[];
+  userId: string;
+  orgId: string;
 }) => {
   try {
     const exists = await db.query.chats
@@ -93,6 +97,8 @@ const ensureChatExists = async (input: {
             name: UploadManager.getFile(id)?.name || 'Uploaded File',
           };
         }),
+        userId: input.userId,
+        orgId: input.orgId,
       });
     }
   } catch (err) {
@@ -102,6 +108,15 @@ const ensureChatExists = async (input: {
 
 export const POST = async (req: Request) => {
   try {
+    const authResult = authMiddleware(req);
+    if (!authResult.success) {
+      return Response.json(
+        { message: authResult.error },
+        { status: 401 },
+      );
+    }
+    const auth = authResult.auth as AuthContext;
+
     const reqBody = (await req.json()) as Body;
 
     const parseBody = safeValidateBody(reqBody);
@@ -230,6 +245,8 @@ export const POST = async (req: Request) => {
       sources: body.sources as SearchSources[],
       fileIds: body.files,
       query: body.message.content,
+      userId: auth.userId,
+      orgId: auth.activeOrg?.organizationId ?? '',
     });
 
     req.signal.addEventListener('abort', () => {
