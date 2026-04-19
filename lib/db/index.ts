@@ -9,7 +9,7 @@
 
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
-import * as schema from './schema/index.js';
+import * as schema from './schema/index';
 
 const { Pool } = pg;
 
@@ -25,4 +25,4 @@ export const db = drizzle(pool, { schema });
 export { pool };
 
 // Export schema types for convenience
-export * from './schema/index.js';
+export * from './schema/index';
