@@ -8,7 +8,7 @@ import {
 } from '@headlessui/react';
 import { Fragment } from 'react';
 import { useChat } from '@/lib/hooks/useChat';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const OptimizationModes = [
   {

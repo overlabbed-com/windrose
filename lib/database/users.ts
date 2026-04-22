@@ -1,5 +1,5 @@
 /**
- * Mock user database for Vane authentication.
+ * Mock user database for Windrose authentication.
  * In production, this would be PostgreSQL or similar.
  */
 

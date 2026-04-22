@@ -1,5 +1,6 @@
 import ModelRegistry from '@/lib/models/registry';
 import { NextRequest } from 'next/server';
+import { authMiddleware } from '@/lib/auth/middleware';
 
 export const GET = async (req: Request) => {
   try {
@@ -34,10 +35,16 @@ export const GET = async (req: Request) => {
 
 export const POST = async (req: NextRequest) => {
   try {
-    const body = await req.json();
-    const { type, name, config } = body;
+    // Authenticate before allowing provider creation
+    const auth = await authMiddleware(req);
+    if (!auth.success) {
+      return auth.error!;
+    }
 
-    if (!type || !name || !config) {
+    const body = await req.json();
+    const { type, name, config } = body as { type: string; name: string; config: Record<string, any> };
+
+    if (!type || !name || !config || typeof type !== 'string' || typeof name !== 'string' || typeof config !== 'object') {
       return Response.json(
         {
           message: 'Missing required fields.',

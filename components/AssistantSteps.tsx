@@ -6,7 +6,7 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
-  BookSearch,
+  Book,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
@@ -24,7 +24,7 @@ const getStepIcon = (step: ResearchBlockSubStep) => {
   ) {
     return <FileText className="w-4 h-4" />;
   } else if (step.type === 'reading') {
-    return <BookSearch className="w-4 h-4" />;
+    return <Book className="w-4 h-4" />;
   }
 
   return null;

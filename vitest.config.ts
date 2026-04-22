@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
 /**
- * Vitest 4 configuration for Vane authentication service.
+ * Vitest 4 configuration for Windrose authentication service.
  * Uses Rolldown instead of esbuild.
  */
 export default defineConfig({

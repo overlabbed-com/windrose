@@ -100,7 +100,7 @@ const SettingsDialogue = ({
     <Dialog
       open={isOpen}
       onClose={() => setIsOpen(false)}
-      className="relative z-50"
+      className="relative z-40"
     >
       <motion.div
         initial={{ opacity: 0 }}

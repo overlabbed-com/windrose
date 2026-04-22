@@ -6,7 +6,7 @@ import { Popover, PopoverButton, PopoverPanel } from '@headlessui/react';
 import { useEffect, useMemo, useState } from 'react';
 import { MinimalProvider } from '@/lib/models/types';
 import { useChat } from '@/lib/hooks/useChat';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const ModelSelector = () => {
   const [providers, setProviders] = useState<MinimalProvider[]>([]);

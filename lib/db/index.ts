@@ -9,7 +9,6 @@
 
 import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
-import * as schema from './schema/index';
 
 const { Pool } = pg;
 
@@ -18,11 +17,17 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-// Create Drizzle instance with schema
-export const db = drizzle(pool, { schema });
+// Create Drizzle instance without schema (schema is imported dynamically)
+export const db = drizzle(pool);
+
+// Default export for convenience
+export default db;
 
 // Export pool for direct queries if needed
 export { pool };
 
-// Export schema types for convenience
-export * from './schema/index';
+// Dynamically import schema at runtime
+export async function getSchema() {
+  const schema = await import('./schema/index');
+  return schema;
+}

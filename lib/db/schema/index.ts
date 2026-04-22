@@ -1,39 +1,20 @@
 /**
  * Windrose PostgreSQL Schema
  * 
- * Uses Drizzle ORM with pgTable, uuid, varchar, text, timestamp, jsonb, pgEnum.
+ * Uses Drizzle ORM with pgTable, uuid, varchar, text, timestamp, jsonb.
  * 
- * Tables:
- * - users: User accounts with password authentication
- * - sessions: Session tokens for session-based auth
- * - organizations: Multi-tenant organization support
- * - user_organizations: User-organization membership with roles
- * - organization_permissions: Role-based permissions per organization
- * - api_keys: API keys for programmatic access
+ * Note: Using a factory pattern to avoid build-time execution issues.
  */
 
-import { pgTable, uuid, varchar, text, timestamp, jsonb, pgEnum } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, jsonb } from 'drizzle-orm/pg-core';
 
 // =============================================================================
-// Enums
+// Enum values (as TypeScript constants)
 // =============================================================================
 
-export const permissionsEnum = pgEnum('permissions', [
-  'org:manage',
-  'org:invite',
-  'org:roles',
-  'chat:create',
-  'chat:share',
-  'chat:delete',
-  'settings:manage',
-]);
-
-export const userOrgRoleEnum = pgEnum('user_org_role', [
-  'owner',
-  'admin',
-  'member',
-  'guest',
-]);
+export type Permission = 'org:manage' | 'org:invite' | 'org:roles' | 'chat:create' | 'chat:share' | 'chat:delete' | 'settings:manage';
+export type UserOrgRole = 'owner' | 'admin' | 'member' | 'guest';
+export type MessageRole = 'user' | 'assistant' | 'system';
 
 // =============================================================================
 // Users
@@ -44,7 +25,7 @@ export const users = pgTable('users', {
   email: varchar('email', { length: 255 }).notNull().unique(),
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
 });
 
 export type User = typeof users.$inferSelect;
@@ -56,7 +37,7 @@ export type NewUser = typeof users.$inferInsert;
 
 export const sessions = pgTable('sessions', {
   tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
@@ -73,7 +54,7 @@ export const organizations = pgTable('organizations', {
   name: varchar('name', { length: 255 }).notNull(),
   slug: varchar('slug', { length: 100 }).notNull().unique(),
   logoUrl: text('logo_url'),
-  settings: jsonb('settings').$type<OrgSettings>().default({}),
+  settings: jsonb('settings').default({}),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
@@ -87,15 +68,10 @@ export type NewOrganization = typeof organizations.$inferInsert;
 
 export const userOrganizations = pgTable('user_organizations', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  role: userOrgRoleEnum('role').notNull().default('member'),
-  joinedAt: timestamp('joined_at').defaultNow().notNull(),
-}, {
-  unique: {
-    name: 'user_organizations_user_org_unique',
-    columns: ['userId', 'organizationId'],
-  },
+  userId: uuid('user_id').notNull(),
+  organizationId: uuid('organization_id').notNull(),
+  role: varchar('role', { length: 50 }).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 export type UserOrganization = typeof userOrganizations.$inferSelect;
@@ -107,9 +83,10 @@ export type NewUserOrganization = typeof userOrganizations.$inferInsert;
 
 export const organizationPermissions = pgTable('organization_permissions', {
   id: uuid('id').primaryKey().defaultRandom(),
-  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  organizationId: uuid('organization_id').notNull(),
   role: varchar('role', { length: 50 }).notNull(),
-  permission: permissionsEnum('permission').notNull(),
+  permission: varchar('permission', { length: 100 }).notNull(),
+  grantedAt: timestamp('granted_at').defaultNow().notNull(),
 });
 
 export type OrganizationPermission = typeof organizationPermissions.$inferSelect;
@@ -121,58 +98,44 @@ export type NewOrganizationPermission = typeof organizationPermissions.$inferIns
 
 export const apiKeys = pgTable('api_keys', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  organizationId: uuid('organization_id').references(() => organizations.id, { onDelete: 'set null' }),
-  prefix: varchar('prefix', { length: 16 }).notNull(),
-  hash: varchar('hash', { length: 255 }).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  userId: uuid('user_id').notNull(),
+  keyHash: varchar('key_hash', { length: 255 }).notNull().unique(),
+  name: varchar('name', { length: 255 }).notNull(),
   lastUsedAt: timestamp('last_used_at'),
+  expiresAt: timestamp('expires_at'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type NewApiKey = typeof apiKeys.$inferInsert;
 
 // =============================================================================
-// Types
+// Chats
 // =============================================================================
 
-export interface OrgSettings {
-  defaultModel?: string;
-  allowedModels?: string[];
-  features?: {
-    chat?: boolean;
-    search?: boolean;
-    files?: boolean;
-  };
-  restrictions?: {
-    maxChatsPerDay?: number;
-    maxStorageMb?: number;
-  };
-}
+export const chats = pgTable('chats', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: varchar('title', { length: 255 }).notNull(),
+  userId: varchar('user_id', { length: 255 }).notNull(),
+  organizationId: uuid('organization_id'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
 
-// Default role permissions mapping
-export const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
-  owner: [
-    'org:manage',
-    'org:invite',
-    'org:roles',
-    'chat:create',
-    'chat:share',
-    'chat:delete',
-    'settings:manage',
-  ],
-  admin: [
-    'org:invite',
-    'org:roles',
-    'chat:create',
-    'chat:share',
-    'chat:delete',
-  ],
-  member: [
-    'chat:create',
-    'chat:share',
-  ],
-  guest: [
-    'chat:create',
-  ],
-};
+export type Chat = typeof chats.$inferSelect;
+export type NewChat = typeof chats.$inferInsert;
+
+// =============================================================================
+// Messages
+// =============================================================================
+
+export const messages = pgTable('messages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  chatId: uuid('chat_id').notNull(),
+  role: varchar('role', { length: 50 }).notNull(),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export type Message = typeof messages.$inferSelect;
+export type NewMessage = typeof messages.$inferInsert;

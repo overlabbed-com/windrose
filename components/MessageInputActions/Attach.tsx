@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { Fragment, useRef, useState } from 'react';
 import { useChat } from '@/lib/hooks/useChat';
-import { AnimatePresence } from 'motion/react';
+import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 

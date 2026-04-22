@@ -4,7 +4,7 @@ import crypto from "crypto"
 import fs from 'fs';
 import { splitText } from "../utils/splitText";
 import { PDFParse } from 'pdf-parse';
-import { CanvasFactory } from 'pdf-parse/worker';
+// import { CanvasFactory } from 'pdf-parse/worker'; // Disabled
 import officeParser from 'officeparser'
 
 const supportedMimeTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'] as const

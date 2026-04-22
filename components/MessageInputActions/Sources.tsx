@@ -10,7 +10,7 @@ import {
   GraduationCapIcon,
   NetworkIcon,
 } from '@phosphor-icons/react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const sourcesList = [
   {

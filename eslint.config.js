@@ -4,7 +4,7 @@ import nextPlugin from '@next/eslint-plugin-next';
 import prettier from 'eslint-config-prettier';
 
 /**
- * ESLint flat config for Vane authentication service.
+ * ESLint flat config for Windrose authentication service.
  * Uses recommended TypeScript and Next.js rules.
  */
 export default tseslint.config(

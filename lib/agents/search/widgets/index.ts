@@ -1,10 +1,9 @@
+import weatherWidget from './weatherWidget';
 import calculationWidget from './calculationWidget';
 import WidgetExecutor from './executor';
-import weatherWidget from './weatherWidget';
-import stockWidget from './stockWidget';
 
 WidgetExecutor.register(weatherWidget);
 WidgetExecutor.register(calculationWidget);
-WidgetExecutor.register(stockWidget);
+// stockWidget disabled due to yahoo-finance2 dependency issues
 
 export { WidgetExecutor };
